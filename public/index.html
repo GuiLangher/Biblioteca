@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Biblioteca</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>CRUD Biblioteca</h1>
+
+  <h2>Adicionar Livro</h2>
+  <form id="formLivro">
+    <input type="text" id="nome" placeholder="Nome do Livro" required>
+    <input type="number" id="valor" placeholder="Valor (R$)" required>
+    <button type="submit">Adicionar</button>
+  </form>
+
+  <h2>Lista de Livros</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Valor</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaLivros">
+    </tbody>
+  </table>
+
+  <script>
+    const apiUrl = 'http://localhost:3000/livros';
+
+    // Carregar livros ao iniciar
+    function carregarLivros() {
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          const tabela = document.getElementById('tabelaLivros');
+          tabela.innerHTML = '';
+          data.forEach(livro => {
+            tabela.innerHTML += `
+              <tr>
+                <td>${livro.id}</td>
+                <td>${livro.nome}</td>
+                <td>${livro.valor.toFixed(2)}</td>
+                <td>
+                  <button onclick="editarLivro(${livro.id}, '${livro.nome}', ${livro.valor})">Editar</button>
+                  <button onclick="deletarLivro(${livro.id})">Excluir</button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+    }
+
+    // Adicionar livro
+    document.getElementById('formLivro').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value;
+      const valor = document.getElementById('valor').value;
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, valor: parseFloat(valor) })
+      })
+      .then(response => response.json())
+      .then(() => {
+        carregarLivros();
+        document.getElementById('formLivro').reset();
+      });
+    });
+
+    // Editar livro
+    function editarLivro(id, nome, valor) {
+      const novoNome = prompt('Novo Nome do Livro:', nome);
+      const novoValor = prompt('Novo Valor do Livro:', valor);
+
+      if (novoNome && novoValor) {
+        fetch(`${apiUrl}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: novoNome, valor: parseFloat(novoValor) })
+        })
+        .then(() => carregarLivros());
+      }
+    }
+
+    // Deletar livro
+    function deletarLivro(id) {
+      if (confirm('Tem certeza que deseja excluir este livro?')) {
+        fetch(`${apiUrl}/${id}`, { method: 'DELETE' })
+          .then(() => carregarLivros());
+      }
+    }
+
+    // Inicializar
+    carregarLivros();
+  </script>
+</body>
+</html>
